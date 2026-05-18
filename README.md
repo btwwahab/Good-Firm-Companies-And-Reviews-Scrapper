@@ -1,59 +1,272 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Good Firm Companies & Reviews Scrapper
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel (PHP 8.2+) application for scraping **company listings and reviews** (e.g., “good firms” directories) and exporting the collected data for analysis.
 
-## About Laravel
+This repository is a Laravel 12 project with a small Node.js toolchain used for browser automation / scraping (Puppeteer) and data export (XLSX). It includes a ready-to-run setup script via Composer.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Table of Contents
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- [Project Overview](#project-overview)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [How It Works (End-to-End)](#how-it-works-end-to-end)
+- [Prerequisites](#prerequisites)
+- [Installation & Setup](#installation--setup)
+- [Running Locally](#running-locally)
+- [Configuration](#configuration)
+- [Database](#database)
+- [Exporting Data](#exporting-data)
+- [Troubleshooting](#troubleshooting)
+- [Security Notes](#security-notes)
+- [License](#license)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Project Overview
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+This app is designed to:
+1. **Scrape company information** from a target directory/site.
+2. **Scrape reviews** associated with those companies (where available).
+3. **Store results** in a local database for further processing.
+4. **Export** the final dataset (commonly to Excel/CSV-like formats).
 
-## Laravel Sponsors
+> The repository is structured like a standard Laravel application (routes, app, database, resources, etc.), with additional Node dependencies for headless scraping and exports.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## Tech Stack
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Backend
+- **Laravel Framework 12**
+- **PHP ^8.2**
+- **Guzzle** (HTTP requests)
+- **Symfony DomCrawler + CssSelector** (HTML parsing)
+- **Spatie Browsershot** (headless browser scraping via Chromium)
 
-## Contributing
+### Frontend / Tooling
+- **Vite** (asset bundling)
+- **TailwindCSS**
+- **Node.js dependencies**:
+  - **Puppeteer** (headless Chrome automation)
+  - **xlsx** (Excel export)
+  - **undici** (HTTP client)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## Features
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- Scrape company directory pages (name, profile URL, metadata, etc.)
+- Scrape company reviews (rating, review text, reviewer details, timestamps if available)
+- Store scraped data in a database (default: SQLite)
+- Export scraped datasets (e.g., `.xlsx`)
+- Local development workflow with:
+  - Laravel server
+  - queue worker
+  - Vite dev server
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## How It Works (End-to-End)
+
+A typical scraping run looks like:
+
+1. **Configure environment** (`.env`) and database (SQLite by default).
+2. **Start the app** locally (Laravel server + queue worker if needed).
+3. **Run scraping logic** (commonly via an Artisan command, a route/controller, or a script).
+4. The scraper collects:
+   - Company list pages → company profile URLs
+   - Company profile pages → company details
+   - Reviews pages → review items
+5. Data is persisted in the database.
+6. **Export** the results for use in Excel / analytics tools.
+
+> Where exactly the scraper is triggered depends on the project’s implementation (Artisan command vs web route). This repo contains Laravel `routes/web.php` and `routes/console.php` for entry points.
+
+---
+
+## Prerequisites
+
+Make sure you have:
+
+- **PHP 8.2+**
+- **Composer**
+- **Node.js + npm**
+- A working local environment for Laravel (recommended):
+  - macOS/Linux: native PHP
+  - Windows: WSL recommended
+
+Optional:
+- A Chromium-compatible environment (required for Browsershot/Puppeteer)
+- SQLite installed (often included by default)
+
+---
+
+## Installation & Setup
+
+Clone and install dependencies:
+
+```bash
+git clone https://github.com/btwwahab/Good-Firm-Companies-And-Reviews-Scrapper.git
+cd Good-Firm-Companies-And-Reviews-Scrapper
+```
+
+### One-command setup (recommended)
+
+This project defines a Composer script that performs the full setup:
+
+```bash
+composer run setup
+```
+
+That script will:
+- install PHP dependencies
+- create `.env` from `.env.example` if missing
+- generate app key
+- run migrations
+- install Node dependencies
+- build frontend assets
+
+---
+
+## Running Locally
+
+### Option A: Run everything together (recommended)
+
+```bash
+composer run dev
+```
+
+This launches (via `concurrently`) multiple processes, typically including:
+- Laravel dev server
+- Queue listener
+- Frontend dev server (Vite)
+
+### Option B: Run services manually
+
+In separate terminals:
+
+```bash
+php artisan serve
+```
+
+```bash
+php artisan queue:listen --tries=1
+```
+
+```bash
+npm run dev
+```
+
+---
+
+## Configuration
+
+Copy `.env.example` to `.env` (if you didn’t run `composer run setup`):
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Key defaults from `.env.example`:
+- `APP_ENV=local`
+- `APP_DEBUG=true`
+- `APP_URL=http://localhost`
+- `DB_CONNECTION=sqlite`
+
+If you use SQLite, ensure the SQLite database file exists. Common Laravel setup uses:
+
+```bash
+touch database/database.sqlite
+php artisan migrate
+```
+
+> If your scraping depends on queue jobs, ensure `QUEUE_CONNECTION=database` migrations are applied and the queue worker is running.
+
+---
+
+## Database
+
+Default environment uses **SQLite**:
+
+- Set in `.env`:
+  - `DB_CONNECTION=sqlite`
+
+Run migrations:
+
+```bash
+php artisan migrate
+```
+
+If you switch to MySQL/Postgres, update `.env` accordingly and re-run migrations.
+
+---
+
+## Exporting Data
+
+This project includes the `xlsx` dependency (Node), suggesting that exports may be generated as Excel files.
+
+Common patterns you can implement/use:
+- Export from Laravel (PHP) by querying DB and generating a file
+- Export using a Node script (in `scripts/`) that reads data and writes `.xlsx`
+
+If there is a dedicated script, it will typically live under:
+
+- `scripts/` (repository includes this folder)
+
+Run scripts via node, for example:
+
+```bash
+node scripts/export.js
+```
+
+(Adjust the script name to whatever exists in `scripts/`.)
+
+---
+
+## Troubleshooting
+
+### 1) App key missing
+If you see errors about `APP_KEY`, run:
+
+```bash
+php artisan key:generate
+```
+
+### 2) SQLite errors
+Make sure the SQLite file exists and is writable:
+
+```bash
+mkdir -p database
+touch database/database.sqlite
+php artisan migrate
+```
+
+### 3) Puppeteer / Browsershot issues
+Headless browser tooling may require OS packages (common on Linux servers). If Chromium fails to launch:
+- confirm Node version is compatible
+- confirm required libraries are installed (Linux)
+- try running in non-headless mode during debugging (if supported by your script)
+
+### 4) Queue not processing
+If jobs are queued but not executed:
+- run migrations for queue tables (if used)
+- ensure worker is running:
+  ```bash
+  php artisan queue:listen
+  ```
+
+---
+
+## Security Notes
+
+- Do **not** commit `.env` (secrets) to Git.
+- Scraping websites may be subject to terms of service, robots.txt, and legal/compliance constraints. Make sure you have permission to scrape the target site(s) and respect rate limits.
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+No license file is currently specified in the repository metadata. If you intend this project to be open-source, consider adding a `LICENSE` file (e.g., MIT).
